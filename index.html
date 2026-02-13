@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Seguimiento Conductual</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --azul-pro: #0f172a;
+            --plomo-bg: #f8fafc;
+            --plomo-borde: #e2e8f0;
+            --verde-exito: #10b981;
+            --blanco: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--plomo-bg);
+            padding: 15px;
+            color: var(--azul-pro);
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: var(--blanco);
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--plomo-bg);
+            padding-bottom: 10px;
+        }
+
+        .category-title {
+            grid-column: span 9;
+            background: #e2e8f0;
+            color: #1e293b;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 10px 15px;
+            margin-top: 15px;
+            border-radius: 6px;
+            text-align: left;
+            letter-spacing: 0.5px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 3.5fr repeat(7, 1fr) 1.5fr;
+            gap: 8px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .header-labels {
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #64748b;
+            padding-bottom: 10px;
+        }
+
+        .criterio-txt {
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 12px 5px;
+            line-height: 1.3;
+            color: #334155;
+        }
+
+        input[type="checkbox"] {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--plomo-borde);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin: auto;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--azul-pro);
+            border-color: var(--azul-pro);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z'/%3E%3C/svg%3E");
+            background-size: 75%;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .progress-box {
+            background: #f1f5f9;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--verde-exito);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .btn-pdf { background: var(--azul-pro); color: white; }
+        .btn-reset { background: #fee2e2; color: #ef4444; }
+        
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        @media (max-width: 600px) {
+            .grid-container { grid-template-columns: 2fr repeat(7, 0.6fr) 1fr; }
+            .criterio-txt { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2 style="margin:0">Plan de Acción Conductual</h2>
+        <p style="font-size: 0.85rem; color: #64748b;">Registro Semanal de Objetivos</p>
+    </header>
+
+    <div class="grid-container">
+        <div class="header-labels" style="text-align: left;">Conductas a Monitorear</div>
+        <div class="header-labels">L</div><div class="header-labels">M</div>
+        <div class="header-labels">M</div><div class="header-labels">J</div>
+        <div class="header-labels">V</div><div class="header-labels">S</div>
+        <div class="header-labels">D</div>
+        <div class="header-labels">Logro</div>
+
+        <div id="main-board" style="display: contents;"></div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-pdf" onclick="downloadPDF()">Descargar Reporte</button>
+        <button class="btn btn-reset" onclick="resetAll()">Limpiar Todo</button>
+    </div>
+</div>
+
+<script>
+    const categorias = [
+        {
+            nombre: "1. Hiper-responsabilidad y Control (Iglesia/Campo)",
+            items: [
+                "Delegar actividades de mantenimiento/albañilería",
+                "Permitir participación de otros en ministerios",
+                "Aceptar apoyo de terceros sin buscar perfección",
+                "Fomentar el aprendizaje de otras personas"
+            ]
+        },
+        {
+            nombre: "2. Retención y Negociación (Matrimonial/Económico)",
+            items: [
+                "Evitar usar concesiones económicas como control",
+                "No condicionar pastoreado a presencia de esposa",
+                "Realizar una planificación equilibrada"
+            ]
+        },
+        {
+            nombre: "3. Rescate y Protección Excesiva",
+            items: [
+                "No monitorear constantemente cargas de esposa",
+                "Permitir que su esposa trabaje en la tienda",
+                "Atención al propio riesgo físico"
+            ]
+        },
+        {
+            nombre: "4. Gestión del Tiempo y Ocio",
+            items: [
+                "Establecer límites claros",
+                "Evitar impuntualidad por sobrecarga"
+            ]
+        }
+    ];
+
+    const board = document.getElementById('main-board');
+    let totalRows = 0;
+
+    categorias.forEach(cat => {
+        const catTitle = document.createElement('div');
+        catTitle.className = 'category-title';
+        catTitle.innerText = cat.nombre;
+        board.appendChild(catTitle);
+
+        cat.items.forEach(textoCriterio => {
+            const rIdx = totalRows;
+            let rowHtml = `<div class="criterio-txt">${textoCriterio}</div>`;
+            for(let d=0; d<7; d++) {
+                rowHtml += `<input type="checkbox" id="c-${rIdx}-${d}" onclick="calc(${rIdx})">`;
+            }
+            rowHtml += `<div class="progress-box"><div id="bar-${rIdx}" class="progress-bar"></div></div>`;
+            
+            const rowWrapper = document.createElement('div');
+            rowWrapper.style.display = 'contents';
+            rowWrapper.innerHTML = rowHtml;
+            board.appendChild(rowWrapper);
+            totalRows++;
+        });
+    });
+
+    function calc(rIdx) {
+        let count = 0;
+        for(let d=0; d<7; d++) {
+            if(document.getElementById(`c-${rIdx}-${d}`).checked) count++;
+        }
+        document.getElementById(`bar-${rIdx}`).style.width = (count/7*100) + '%';
+    }
+
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.setTextColor(15, 23, 42);
+        doc.text("REPORTE SEMANAL DE SEGUIMIENTO", 20, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text("Registro de conductas y cumplimiento de objetivos", 20, 28);
+        
+        let y = 45;
+        let rIdx = 0;
+        
+        categorias.forEach(cat => {
+            if (y > 270) { doc.addPage(); y = 20; }
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(30);
+            doc.text(cat.nombre, 20, y);
+            y += 8;
+            doc.setFont(undefined, 'normal');
+
+            cat.items.forEach(texto => {
+                let count = 0;
+                for(let d=0; d<7; d++) if(document.getElementById(`c-${rIdx}-${d}`).checked) count++;
+                let pct = Math.round(count/7*100);
+                doc.text(`- ${texto}: ${count}/7 días (${pct}%)`, 25, y);
+                y += 7;
+                rIdx++;
+            });
+            y += 5;
+        });
+        doc.save("Reporte_Conductual.pdf");
+    }
+
+    function resetAll() {
+        if(confirm("¿Deseas resetear todos los registros de esta semana?")) {
+            document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+            document.querySelectorAll('.progress-bar').forEach(b => b.style.width = '0%');
+        }
+    }
+</script>
+
+</body>
+</html>
